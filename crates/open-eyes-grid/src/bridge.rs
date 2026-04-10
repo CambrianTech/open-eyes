@@ -8,6 +8,7 @@
 //! "the continuum mesh knows about it." All normalization happens here.
 
 use open_eyes_core::frame::PipelineEvent;
+use open_eyes_detect::TrackedEntity;
 use crate::events::{GridEvent, MotionPayload, EntityPayload};
 
 /// Convert pipeline events to grid events.
@@ -66,6 +67,33 @@ pub fn pipeline_to_grid(
     }
 
     grid_events
+}
+
+/// Convert tracked entities to grid events.
+/// Called periodically (e.g., every 30 frames) to report entity state.
+pub fn entities_to_grid(
+    node_id: &str,
+    entities: &[TrackedEntity],
+) -> Vec<GridEvent> {
+    entities.iter().map(|e| {
+        GridEvent {
+            topic: "scene:entity:tracked".into(),
+            payload: serde_json::json!({
+                "entity_id": e.id,
+                "class": format!("{:?}", e.class),
+                "position": e.position,
+                "velocity": e.velocity,
+                "confidence": e.confidence,
+                "moving": e.moving,
+                "cameras": e.cameras,
+                "distance": e.distance,
+                "first_seen": e.first_seen,
+                "last_seen": e.last_seen,
+            }),
+            node_id: node_id.into(),
+            timestamp: now(),
+        }
+    }).collect()
 }
 
 fn now() -> f64 {
