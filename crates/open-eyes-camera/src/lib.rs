@@ -21,6 +21,7 @@
 
 pub mod source;
 pub mod video;
+pub mod manager;
 pub mod rtsp;
 pub mod discovery;
 pub mod agent;
