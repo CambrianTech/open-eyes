@@ -12,6 +12,7 @@
 use image::{Rgb, RgbImage};
 use std::sync::Arc;
 use open_eyes_core::CameraIntrinsics;
+use open_eyes_core::frame::PipelineEvent;
 
 /// A synthetic frame with its ground truth.
 pub struct SyntheticFrame {
@@ -227,13 +228,80 @@ mod tests {
     }
 
     #[test]
-    fn vdd_pipeline_detects_motion_in_synthetic_sequence() {
-        // THE REAL TEST: push synthetic frames through the actual pipeline
-        // and validate it detects motion in the correct window.
-        let seq = moving_rectangle(160, 120, 60);
+    fn vdd_full_triage_pipeline_on_synthetic() {
+        // THE REAL E2E TEST: full triage pipeline (background + flow + edge density)
+        // on synthetic sequence with known ground truth.
+        use open_eyes_core::nodes::background::BackgroundSubNode;
+        use open_eyes_core::nodes::motion::MotionDetectorNode;
+        use open_eyes_core::nodes::edge_density::EdgeDensityNode;
+
+        let seq = moving_rectangle(320, 240, 80);
         let mut pipeline = Pipeline::new();
 
-        let mut motion_detected_frames = Vec::new();
+        // All three triage nodes — same as on-device pipeline
+        pipeline.add_node(Box::new(BackgroundSubNode::full_res(25, 0.02)));
+        pipeline.add_node(Box::new(MotionDetectorNode::full_res(0.005)));
+        pipeline.add_node(Box::new(EdgeDensityNode::full_res(0.03)));
+
+        let mut motion_frames: Vec<u64> = Vec::new();
+        let mut static_false_positives = 0u64;
+
+        for frame in &seq {
+            let intrinsics = default_intrinsics(320, 240);
+            let events = pipeline.process_frame(
+                frame.image.clone(),
+                "synthetic",
+                intrinsics,
+                frame.frame_index as f64 / 30.0,
+            );
+
+            let has_event = events.iter().any(|e| matches!(e, PipelineEvent::Motion { .. }));
+
+            if has_event {
+                motion_frames.push(frame.frame_index);
+                if !frame.has_motion {
+                    static_false_positives += 1;
+                }
+            }
+        }
+
+        assert_eq!(pipeline.frame_count(), 80, "All 80 frames processed");
+
+        // Pipeline MUST detect motion during the motion window (frames 20-59)
+        let detected_in_window: Vec<_> = motion_frames.iter()
+            .filter(|f| **f >= 20 && **f < 60)
+            .collect();
+        assert!(
+            !detected_in_window.is_empty(),
+            "Pipeline must detect motion during ground truth motion window (frames 20-59). \
+             Detected at frames: {:?}", motion_frames
+        );
+
+        // False positives in static regions should be minimal
+        assert!(
+            static_false_positives < 5,
+            "False positives in static frames should be < 5, got {}. \
+             False positive frames: {:?}",
+            static_false_positives,
+            motion_frames.iter().filter(|f| **f < 20 || **f >= 60).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn vdd_lighting_change_low_false_positive_rate() {
+        // Full pipeline on lighting change — should NOT trigger significant events
+        use open_eyes_core::nodes::background::BackgroundSubNode;
+        use open_eyes_core::nodes::motion::MotionDetectorNode;
+
+        let seq = lighting_change(160, 120, 60);
+        let mut pipeline = Pipeline::new();
+
+        let mut bg_node = BackgroundSubNode::full_res(30, 0.05);
+        bg_node.alpha = 0.05; // fast adaptation for lighting
+        pipeline.add_node(Box::new(bg_node));
+        pipeline.add_node(Box::new(MotionDetectorNode::full_res(0.01)));
+
+        let mut false_positives = 0;
 
         for frame in &seq {
             let intrinsics = default_intrinsics(160, 120);
@@ -244,24 +312,26 @@ mod tests {
                 frame.frame_index as f64 / 30.0,
             );
 
-            // Check if any motion event was emitted
-            for event in &events {
-                if let open_eyes_core::frame::PipelineEvent::Motion { magnitude, .. } = event {
-                    if *magnitude > 0.1 {
-                        motion_detected_frames.push(frame.frame_index);
+            // Skip first 5 frames (initialization)
+            if frame.frame_index > 5 {
+                for e in &events {
+                    if matches!(e, PipelineEvent::Motion { .. }) {
+                        false_positives += 1;
                     }
                 }
             }
         }
 
-        // The pipeline currently has no ProcessNodes registered,
-        // so no events are emitted. This test validates the plumbing works.
-        // Once we add a MotionDetectorNode, this test will validate
-        // that motion is detected in frames 20-40 (the motion window).
-        assert_eq!(pipeline.frame_count(), 60, "All frames should be processed");
-
-        // TODO: once MotionDetectorNode is implemented, assert:
-        // assert!(!motion_detected_frames.is_empty(), "Should detect motion");
-        // assert!(motion_detected_frames.iter().all(|f| *f >= 20), "No false positives before motion");
+        // Two nodes (background + flow) both emit Motion events, so
+        // the combined false positive count is higher than either alone.
+        // With 60 frames × 2 nodes = 120 possible events, < 20 is good.
+        // The key metric: false positive RATE, not count.
+        let total_possible = 55 * 2; // (60 frames - 5 init) × 2 nodes
+        let fp_rate = false_positives as f64 / total_possible as f64;
+        assert!(
+            fp_rate < 0.20,
+            "Lighting change false positive rate should be < 20%, got {:.1}% ({}/{})",
+            fp_rate * 100.0, false_positives, total_possible
+        );
     }
 }

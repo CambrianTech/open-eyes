@@ -9,3 +9,4 @@
 
 pub mod motion;
 pub mod background;
+pub mod edge_density;
