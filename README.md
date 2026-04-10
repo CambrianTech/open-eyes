@@ -50,7 +50,7 @@ Camera N ──┘                    │  Wildlife/motion alerts          │
 
 ### Rust CBAR — 3D Scene Reconstruction
 
-The core is a Rust adaptation of the [CBAR](https://github.com/CambrianTech/react-home-ar) (Cambrian AR) layer — originally built for real-time AR on mobile phones. The key techniques:
+The core is a Rust adaptation of [CBAR](https://github.com/CambrianTech/cb-mobile-sdk) (Cambrian Augmented Reality) — a 50,000-line C++ engine that shipped real-time 3D scene understanding on iPhone 7 at 60fps. The key techniques:
 
 - **Multi-camera pose estimation** — know where each camera is in 3D space
 - **Feature tracking** — ORB/optical flow variants across frames and cameras
@@ -251,7 +251,7 @@ open-eyes is a **grid application** built on [continuum](https://github.com/Camb
 | **splat** | stub | — | ⬜ Gaussian splatting renderer |
 | **detect** | stub | — | ⬜ Detection + tracking with forged models |
 
-**30 tests passing.** The 3D reconstruction math from [react-home-ar](https://github.com/CambrianTech/react-home-ar) is being ported to Rust. Next: connect real cameras via RTSP and run actual frames through the pipeline.
+**30 tests passing.** The 3D reconstruction pipeline from [cb-mobile-sdk](https://github.com/CambrianTech/cb-mobile-sdk) (the production C++ CBAR engine) is being ported to Rust — lazy-eval frames, priority-tiered QueueThread RTOS, pluggable analyzer pipeline, and image-type-agnostic surface accumulation. Next: connect real cameras via RTSP and run actual frames through the pipeline.
 
 ## Contributing
 
