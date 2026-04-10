@@ -13,6 +13,8 @@
 
 pub mod types;
 pub mod engine;
+#[cfg(test)]
+mod tests;
 
 use std::os::raw::c_char;
 use std::slice;

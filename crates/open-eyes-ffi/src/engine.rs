@@ -17,14 +17,14 @@ use crate::types::*;
 pub struct OEEngine {
     pub(crate) config: OEConfig,
     pipeline: Pipeline,
-    fusion: FusionEngine,
+    pub(crate) fusion: FusionEngine,
     stitch: StitchEngine,
 
     /// Per-camera intrinsics cache
     pub(crate) camera_intrinsics: std::collections::HashMap<u32, Arc<CameraIntrinsics>>,
 
     /// Ring buffer of recent events
-    events: Mutex<Vec<OEEvent>>,
+    pub(crate) events: Mutex<Vec<OEEvent>>,
 
     /// Frame counter
     frames_processed: u64,
@@ -169,7 +169,7 @@ impl OEEngine {
 
 // --- Pixel conversion (the ONLY place we touch pixels) ---
 
-fn bgra_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
+pub(crate) fn bgra_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
     let pixel_count = (width * height) as usize;
     let mut rgb = Vec::with_capacity(pixel_count * 3);
     for i in 0..pixel_count {
@@ -184,7 +184,7 @@ fn bgra_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
         .unwrap_or_else(|| image::RgbImage::new(width, height))
 }
 
-fn yuv420_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
+pub(crate) fn yuv420_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
     let w = width as usize;
     let h = height as usize;
     let y_size = w * h;
@@ -213,7 +213,7 @@ fn yuv420_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
         .unwrap_or_else(|| image::RgbImage::new(width, height))
 }
 
-fn gray_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
+pub(crate) fn gray_to_rgb(data: &[u8], width: u32, height: u32) -> image::RgbImage {
     let mut rgb = Vec::with_capacity(data.len() * 3);
     for &g in data.iter().take((width * height) as usize) {
         rgb.push(g);
