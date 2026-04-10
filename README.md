@@ -175,25 +175,49 @@ One walk-through, multiple uses. The security setup is just the first thing it's
 
 **Scales infinitely.** Add cameras → the 3D scene gets denser. Add processing nodes → the grid handles more cameras. Add GPU → detection runs faster and the splat view renders smoother. There is no ceiling.
 
+### Adding a Camera
+
+```
+1. Write the open-eyes firmware to a micro SD card
+2. Pop it into the camera
+3. Needle-reset (pin in the reset hole)
+4. Walk away
+```
+
+That's it. The camera boots from SD, flashes itself with OpenIPC + the open-eyes Rust agent, announces itself on your local network via mDNS, and your grid node picks it up. No app. No cloud account. No pairing dance. No QR code scan. Physical access is the trust root — you're standing next to the camera, you own it.
+
+Point your phone at the camera to locate it in 3D space (the setup app's AR finds it via feature matching). Coverage map updates instantly. If anything goes wrong, pull the SD card — camera boots its original firmware. The SD card is both the install media and the escape hatch.
+
 ## Architecture
 
 ```
 open-eyes/
 ├── crates/
 │   ├── open-eyes-core/     # 3D reconstruction (Rust CBAR adaptation)
-│   │   ├── geometry/       # 3D math, transforms, projections
-│   │   ├── scene/          # SceneState, accumulation, persistence
+│   │   ├── geometry/       # 3D math, transforms, projections, RANSAC
+│   │   ├── scene/          # Navigable world model (rooms, floors, entities)
 │   │   ├── features/       # ORB, optical flow, feature matching
-│   │   └── fusion/         # Multi-camera fusion, temporal interpolation
+│   │   ├── fusion/         # N-camera registration + cross-camera tracking
+│   │   ├── gpu/            # Lazy-eval GPU compute (textures, not pixels)
+│   │   ├── frame/          # OnceLock lazy-eval data bus (from CBAR)
+│   │   ├── stitch/         # Multi-camera stitching, zones, entity trails
+│   │   └── rtos/           # Async pipeline with backpressure
 │   │
-│   ├── open-eyes-camera/   # Camera drivers (RTSP, ONVIF, USB, wireless)
+│   ├── open-eyes-ffi/      # C ABI boundary (extern "C", cbindgen → .h)
+│   ├── open-eyes-camera/   # Camera drivers (RTSP, ONVIF, on-device agent)
+│   ├── open-eyes-detect/   # Detection + tracking (forged models)
 │   ├── open-eyes-grid/     # Continuum grid integration
-│   ├── open-eyes-splat/    # Gaussian splatting renderer (wgpu)
-│   └── open-eyes-detect/   # Detection + tracking (forged models)
+│   └── open-eyes-splat/    # Gaussian splatting renderer (wgpu)
 │
-├── docs/                   # Architecture, camera compatibility, setup
-├── Cargo.toml              # Workspace manifest
-└── README.md
+├── bindings/
+│   ├── openeyes.h          # Auto-generated C header (cbindgen)
+│   ├── ios/                # Swift wrapper (AVFoundation, ARKit, visionOS)
+│   ├── android/            # Kotlin wrapper + JNI bridge (CameraX, ARCore, Quest)
+│   └── flutter/            # Flutter plugin (UI only — Dart never sees pixels)
+│
+├── app/                    # Flutter app (dashboard, setup scan, scene viewer)
+├── docs/                   # Architecture, firmware, target devices
+└── Cargo.toml              # Workspace manifest
 ```
 
 ## Use Cases

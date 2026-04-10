@@ -150,13 +150,39 @@ For cameras where stock firmware is unacceptable (phones home, no RTSP, etc.):
 4. SSH in, deploy the open-eyes agent binary
 5. Camera is now a locked-down grid sensor
 
-### Phase 3: open-eyes firmware image
-Package OpenIPC + our agent into a single flashable image:
-1. OpenIPC base layer (kernel + drivers + busybox)
-2. open-eyes agent (Rust binary)
-3. Tailscale (headless node)
-4. Auto-discovery (the camera announces itself to the grid on boot)
-5. **One-flash setup: flash the image, camera joins the grid automatically**
+### Phase 3: SD Card Flash (the product)
+
+**The entire onboarding is physical. No app. No cloud account. No pairing dance.**
+
+```
+1. Download the image for your camera's SoC
+2. Write it to a micro SD card (dd, balenaEtcher, whatever)
+3. Pop the SD card into the camera
+4. Needle-reset the camera (pin in the reset hole)
+5. Walk away. You're done.
+```
+
+The camera boots from SD, overwrites its stock firmware with:
+- OpenIPC base (kernel + drivers + busybox)
+- open-eyes agent (Rust binary, 2-5MB)
+- Tailscale headless node (auto-joins your mesh)
+- Auto-discovery (mDNS announcement: "I'm an open-eyes camera")
+- Locked-down iptables (no outbound except grid mesh)
+
+**The needle-reset IS the trust ceremony.** You are physically present at the device. That's your proof of ownership. No cloud server needs to verify you. No app needs to "claim" the device. Physical access = root.
+
+**After boot:**
+- Camera announces itself on the local network via mDNS
+- Your grid node (or phone running the open-eyes app in setup mode) discovers it
+- Phone's AR camera locates the physical camera in 3D space (feature matching)
+- Camera is registered in the Scene with position + orientation + FOV
+- Coverage map updates immediately
+
+**Per-SoC images.** We maintain firmware images per SoC family (Hi3516, T31, SSD202, etc.). The download page shows: "What chip is in your camera?" with photos of common markings. Pick yours, download, flash. Eventually the app could identify the SoC from a photo of the board.
+
+**Recovery.** If anything goes wrong, the SD card IS the recovery. Pull it out, camera boots its original flash firmware. Put a fresh image on the card, try again. The SD card is both the install media and the escape hatch.
+
+**OTA updates after first boot.** The Foreman pushes firmware updates to cameras over the encrypted mesh. No cloud download. No checking for updates on someone's server. Your grid, your updates.
 
 ---
 
