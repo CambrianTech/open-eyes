@@ -19,19 +19,16 @@ use opencv::video;
 // ── Mat <-> image crate conversions ────────────────────────────────
 
 /// Convert an `image::GrayImage` to an OpenCV `Mat` (8UC1).
-/// Zero-copy when possible — the Mat borrows the image data.
+/// Copies the data into an owned Mat — safe, works with all OpenCV functions.
 pub fn gray_to_mat(grey: &image::GrayImage) -> Mat {
     let (w, h) = grey.dimensions();
-    // Safety: we create a Mat that borrows the image buffer.
-    // The Mat must not outlive the GrayImage.
-    unsafe {
-        Mat::new_rows_cols_with_data_unsafe(
-            h as i32, w as i32,
-            CV_8UC1,
-            grey.as_raw().as_ptr() as *mut std::ffi::c_void,
-            w as usize, // step = width for single-channel
-        ).unwrap_or_else(|_| Mat::zeros(h as i32, w as i32, CV_8UC1).unwrap().to_mat().unwrap())
+    let mut mat = Mat::zeros(h as i32, w as i32, CV_8UC1).unwrap().to_mat().unwrap();
+    let data = grey.as_raw();
+    if let Ok(mat_data) = mat.data_bytes_mut() {
+        let copy_len = data.len().min(mat_data.len());
+        mat_data[..copy_len].copy_from_slice(&data[..copy_len]);
     }
+    mat
 }
 
 /// Convert an OpenCV `Mat` (8UC1) back to `image::GrayImage`.
@@ -135,7 +132,7 @@ pub fn compute_dense_flow(
     let (w, h) = curr.dimensions();
 
     let mut flow = Mat::default();
-    if video::calc_optical_flow_farneback(
+    match video::calc_optical_flow_farneback(
         &prev_mat, &curr_mat,
         &mut flow,
         0.5,   // pyr_scale
@@ -145,9 +142,16 @@ pub fn compute_dense_flow(
         5,     // poly_n
         1.1,   // poly_sigma
         0,     // flags
-    ).is_err() {
-        return FlowField { width: w, height: h, vectors: vec![(0.0, 0.0); (w * h) as usize] };
+    ) {
+        Ok(_) => {},
+        Err(e) => {
+            #[cfg(test)]
+            eprintln!("Farneback failed: {:?}", e);
+            return FlowField { width: w, height: h, vectors: vec![(0.0, 0.0); (w * h) as usize] };
+        }
     }
+
+    // Debug removed — Farneback confirmed working
 
     // Extract flow vectors from the 2-channel Mat
     let mut vectors = Vec::with_capacity((w * h) as usize);

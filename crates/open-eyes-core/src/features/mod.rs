@@ -61,23 +61,31 @@ impl Default for FlowConfig {
 /// Used by the pipeline to decide whether anything is happening
 /// in a camera's field of view. If the motion magnitude is below
 /// the threshold, downstream nodes don't need to wake up.
+/// Compute motion magnitude from an optical flow field.
+///
+/// Returns the 95th percentile of per-pixel flow magnitudes.
+/// This captures "something in the frame moved significantly"
+/// without being triggered by a single noisy pixel (max)
+/// and without missing local motion in a mostly-static scene (75th).
+///
+/// For security cameras: a person walking through 10% of the frame
+/// produces high flow in that 10%. The 95th percentile catches it
+/// because 5% of pixels having strong flow is significant.
+/// The 75th percentile would miss it (75% of frame is static).
 pub fn flow_motion_magnitude(flow: &FlowField) -> f64 {
     if flow.vectors.is_empty() {
         return 0.0;
     }
 
-    // Median magnitude — robust to outliers (a single hot pixel
-    // doesn't trigger false motion detection)
     let mut magnitudes: Vec<f32> = flow.vectors
         .iter()
         .map(|(dx, dy)| (dx * dx + dy * dy).sqrt())
         .collect();
     magnitudes.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    // 75th percentile — captures "most of the frame is moving"
-    // without being dominated by the maximum outlier
-    let idx = magnitudes.len() * 3 / 4;
-    magnitudes[idx] as f64
+    // 95th percentile — "do 5%+ of pixels have significant flow?"
+    let idx = (magnitudes.len() as f64 * 0.95) as usize;
+    magnitudes[idx.min(magnitudes.len() - 1)] as f64
 }
 
 /// Detect whether a camera has moved globally (drift detection).

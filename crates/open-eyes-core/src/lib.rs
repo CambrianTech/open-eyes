@@ -22,6 +22,7 @@ pub mod fusion;
 pub mod frame;
 pub mod gpu;
 pub mod cv;
+pub mod nodes;
 pub mod rtos;
 pub mod stitch;
 
