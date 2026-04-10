@@ -37,7 +37,7 @@ impl Default for NodeConfig {
 
 /// The grid node — owns the pipeline and bridges to continuum.
 pub struct OpenEyesNode {
-    config: NodeConfig,
+    pub config: NodeConfig,
     /// Pending events to send to the grid
     outbound_events: Vec<GridEvent>,
 }
