@@ -245,6 +245,9 @@ Persona config, event subscriptions, threat assessment logic, chat room integrat
 ### Step 6: Foreman Camera Management
 Load balancing, power-aware scheduling, coverage gap detection, triage tier management.
 
+### Step 7: Deployment Alloy
+The entire camera deployment is a forge-alloy contract: cameras, zones, triage config, detection models, acceptance criteria, daily eval schedule. One file, one source of truth, attestable. See [FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md](FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md).
+
 ---
 
 ## What This Proves

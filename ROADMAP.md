@@ -191,7 +191,8 @@ Each phase builds on the last. No skipping. VDD validation at every stage.
 
 ## Principles (non-negotiable across all phases)
 
-1. **All compute in Rust.** Platform bindings are thin wrappers. No scripting languages in the hot path.
+1. **Forge-alloy is the deployment contract.** One alloy describes the whole deployment: cameras, zones, thresholds, models, quality gates. Single source of truth, attestable, portable. See [docs/FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md](docs/FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md).
+2. **All compute in Rust.** Platform bindings are thin wrappers. No scripting languages in the hot path.
 2. **Never rasterize.** Geometry crosses every boundary. Pixels stay on GPU.
 3. **Normalize everything.** 0-1 space. No pixel counts. No hardcoded resolutions.
 4. **VDD every algorithm.** Known input → known correct output → validate within tolerance.

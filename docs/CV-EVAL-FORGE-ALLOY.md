@@ -483,4 +483,8 @@ The anchor table now spans both model forging AND CV pipeline validation:
 | **6** | **open-eyes events vs UCF-Crime** | **CV eval** | **temporal-IoU TBD** | **⬜ Spec ready** |
 | **7** | **open-eyes multicam vs EPFL** | **CV eval** | **MOTA TBD** | **⬜ Spec ready** |
 
-Same table, same methodology, same attestation. Forge-alloy doesn't know the difference between an LLM and a CV pipeline. It runs stages, measures results, attests the chain. That's the whole point.
+| **8** | **joels-house daily eval** | **Deployment** | **FP rate TBD** | **⬜ Spec ready** |
+
+Same table, same methodology, same attestation. Forge-alloy doesn't know the difference between an LLM, a CV pipeline, or a camera deployment. It runs stages, measures results, attests the chain. That's the whole point.
+
+See also: [FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md](FORGE-ALLOY-AS-DEPLOYMENT-CONTRACT.md) — the full deployment alloy pattern.
