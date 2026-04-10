@@ -18,3 +18,5 @@ pub mod node;
 pub mod bridge;
 #[cfg(test)]
 mod integration_test;
+#[cfg(test)]
+mod e2e_demo;
