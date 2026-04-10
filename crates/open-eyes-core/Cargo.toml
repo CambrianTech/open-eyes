@@ -1,0 +1,14 @@
+[package]
+name = "open-eyes-core"
+description = "3D scene reconstruction from multi-camera feeds — the Rust CBAR adaptation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nalgebra = { workspace = true }
+ndarray = { workspace = true }
+image = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/open-eyes-core",
+    "crates/open-eyes-camera",
+    "crates/open-eyes-grid",
+    "crates/open-eyes-splat",
+    "crates/open-eyes-detect",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+repository = "https://github.com/CambrianTech/open-eyes"
+authors = ["Joel Teply", "Claude"]
+
+[workspace.dependencies]
+# Core math
+nalgebra = "0.33"
+ndarray = "0.16"
+
+# Image / video
+image = "0.25"
+ffmpeg-next = "7"
+
+# GPU compute
+wgpu = "24"
+
+# Networking / grid
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
