@@ -1,17 +1,17 @@
-//! open-eyes-grid — continuum grid integration
+//! open-eyes-grid — continuum grid integration.
 //!
-//! Makes an open-eyes camera cluster a first-class grid node in the
-//! continuum mesh. Camera feeds become events on the grid event bus.
-//! The 3D scene reconstruction is available as a navigable view to
-//! any continuum client on the mesh. Persona security teams subscribe
-//! to detection events and reason about threats across the unified
-//! 3D scene model.
+//! Makes open-eyes cameras first-class grid nodes in the continuum mesh.
+//! Camera events flow through the grid event bus. Commands route to camera
+//! nodes from any grid node. The Foreman orchestrates power/coverage.
 //!
-//! Transport: Tailscale (encrypted mesh) + Reticulum (offline-capable).
-//! Same grid primitives as continuum — Commands.execute, Events.emit.
+//! Integration follows the universal continuum pattern:
+//! - Commands.execute('open-eyes/camera/list') → routes to camera node
+//! - Events.emit('camera:motion:detected') → all subscribers on all nodes
+//! - Docker container shares IPC socket with continuum-core
+//!
+//! This crate is the Rust side. The TypeScript side is a thin daemon
+//! in continuum that bridges IPC events to the web Events system.
 
-pub struct OpenEyesGridNode {
-    pub node_id: String,
-    pub cameras: Vec<String>,
-    pub scene_endpoint: String,
-}
+pub mod events;
+pub mod commands;
+pub mod node;
