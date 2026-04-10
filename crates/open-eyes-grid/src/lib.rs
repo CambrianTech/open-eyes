@@ -15,3 +15,4 @@
 pub mod events;
 pub mod commands;
 pub mod node;
+pub mod bridge;
