@@ -20,6 +20,7 @@
 //! know or care which mode a camera is running.
 
 pub mod source;
+pub mod video;
 pub mod rtsp;
 pub mod discovery;
 pub mod agent;
@@ -53,8 +54,8 @@ pub struct CameraConfig {
     /// Static mount location (for cross-camera calibration).
     /// If None, calibration is done via feature matching.
     pub mount_position: Option<[f64; 3]>,
-    /// Static mount orientation (euler angles in radians).
-    pub mount_orientation: Option<[f64; 3]>,
+    /// Static mount orientation as quaternion (w, x, y, z). NEVER Euler angles.
+    pub mount_orientation: Option<[f64; 4]>,
 }
 
 /// Runtime state of a connected camera.
