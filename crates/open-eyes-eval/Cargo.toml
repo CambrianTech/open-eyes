@@ -1,0 +1,21 @@
+[package]
+name = "open-eyes-eval"
+description = "VDD evaluation harness — loads datasets, runs pipeline, computes metrics, outputs forge-alloy results"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "oe-eval"
+path = "src/main.rs"
+
+[dependencies]
+open-eyes-core = { path = "../open-eyes-core" }
+opencv = { workspace = true }
+nalgebra = { workspace = true }
+image = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tokio = { workspace = true }
