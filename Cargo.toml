@@ -6,6 +6,7 @@ members = [
     "crates/open-eyes-grid",
     "crates/open-eyes-splat",
     "crates/open-eyes-detect",
+    "crates/open-eyes-ffi",
 ]
 
 [workspace.package]
@@ -36,3 +37,6 @@ serde_json = "1"
 # Logging
 tracing = "0.1"
 tracing-subscriber = "0.3"
+
+# FFI header generation
+cbindgen = "0.27"

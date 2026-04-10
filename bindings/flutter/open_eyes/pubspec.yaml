@@ -1,0 +1,21 @@
+name: open_eyes
+description: 3D scene understanding from camera feeds. Palantir-level security on your hardware.
+version: 0.1.0
+homepage: https://github.com/CambrianTech/open-eyes
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: OpenEyesPlugin
+      android:
+        package: com.cambriantech.open_eyes
+        pluginClass: OpenEyesPlugin

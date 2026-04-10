@@ -1,8 +1,8 @@
 //! open-eyes-core — 3D scene reconstruction from multi-camera feeds
 //!
-//! Rust adaptation of the CBAR (Cambrian AR) layer from react-home-ar.
-//! The original TypeScript/C++ implementation proved real-time 3D scene
-//! understanding on iPhone 7 at 30-60fps. This Rust port targets:
+//! Rust adaptation of the CBAR (Cambrian AR) engine from cb-mobile-sdk.
+//! The original C++ implementation ran real-time 3D scene understanding
+//! on iPhone 7 at 60fps. This Rust port targets:
 //!
 //! - Multi-camera fusion (N stationary cameras → unified 3D scene)
 //! - Gaussian splat scene representation (navigable from any viewpoint)
@@ -20,6 +20,7 @@ pub mod scene;
 pub mod features;
 pub mod fusion;
 pub mod frame;
+pub mod gpu;
 pub mod rtos;
 pub mod stitch;
 
