@@ -20,6 +20,7 @@ pub mod scene;
 pub mod features;
 pub mod fusion;
 pub mod frame;
+pub mod rtos;
 
 /// A 3D point in world coordinates.
 pub type Point3 = nalgebra::Point3<f64>;
