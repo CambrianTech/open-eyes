@@ -15,6 +15,7 @@
 mod datasets;
 mod metrics;
 mod runner;
+pub mod synthetic;
 
 use std::path::PathBuf;
 
