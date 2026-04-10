@@ -25,6 +25,14 @@ ndarray = "0.16"
 image = "0.25"
 ffmpeg-next = "7"
 
+# Computer vision — the real thing, not hand-rolled
+opencv = { version = "0.98", features = ["clang-runtime"] }
+
+# ML inference — Rust-native, no Python, same stack as continuum
+candle-core = "0.10"
+candle-nn = "0.10"
+candle-transformers = "0.10"
+
 # GPU compute
 wgpu = "24"
 
