@@ -433,6 +433,171 @@ struct EventWireFormat {
 
 ---
 
+## Power Management & Load Balancing
+
+**Battery monitoring and load management are essential.** The agent tracks its own power state and reports it to the grid. The grid uses this to balance work across the mesh.
+
+### Power State Reporting
+
+Every heartbeat (every 30 seconds in continuous mode) includes:
+
+```rust
+struct PowerState {
+    /// Current battery level (0.0-1.0). None if wall-powered.
+    battery_level: Option<f32>,
+    /// Charge rate in watts. Positive = charging (solar/USB), negative = draining.
+    charge_rate_w: f32,
+    /// Power source detected.
+    source: PowerSource,
+    /// CPU temperature in Celsius.
+    cpu_temp_c: f32,
+    /// Current triage tier (how much compute we're doing).
+    triage_tier: TriageTier,
+    /// Estimated hours remaining at current drain rate. None if charging or wall.
+    hours_remaining: Option<f32>,
+}
+
+enum PowerSource {
+    /// USB wall adapter. Unlimited power.
+    Wall,
+    /// Solar panel charging. Power varies with sunlight.
+    Solar,
+    /// Battery only. Draining.
+    Battery,
+    /// Solar + battery. May be charging or draining depending on load vs solar input.
+    SolarBattery,
+    /// PoE (Power over Ethernet). Unlimited.
+    PoE,
+    /// Unknown — report voltage and let the grid figure it out.
+    Unknown,
+}
+```
+
+**How the agent reads power state:** Most camera SoCs expose battery ADC via `/sys/class/power_supply/` or I2C. Solar charge controllers (like TP4056 on cheap panels) provide a charging/standby GPIO. The agent reads these at boot and periodically. If no battery hardware is detected, it reports `PowerSource::Wall` and skips all power management.
+
+### Triage Tiers — Adaptive Compute Load
+
+The agent adjusts its compute load based on available power. Five tiers, from cheapest to most expensive:
+
+```rust
+enum TriageTier {
+    /// Heartbeat only. PIR wake if available. ~0.01W.
+    /// Used when: battery critical (<10%), or grid says "conserve."
+    Hibernate,
+
+    /// Background diff only. No flow, no audio. ~0.3W.
+    /// Used when: battery low (10-25%), solar insufficient.
+    Minimal,
+
+    /// Background diff + optical flow. The standard tier. ~0.8W.
+    /// Used when: battery moderate (25-60%) or wall power.
+    Standard,
+
+    /// Full triage: diff + flow + edge density + audio + scene hash. ~1.2W.
+    /// Used when: battery good (60%+) with solar, or wall power.
+    Full,
+
+    /// Full triage + NPU person detector + high-res flow. ~1.5W.
+    /// Used when: wall power or PoE, NPU available.
+    Maximum,
+}
+```
+
+**Tier transitions are smooth, not jarring.** The agent doesn't flip between tiers frame-to-frame. It evaluates power state every 30 seconds (on heartbeat) and ramps up/down gradually. Hysteresis prevents oscillation — drop to `Minimal` at 20% battery, but don't go back to `Standard` until 35%.
+
+```
+Battery 100% ──────────────────── Full or Maximum
+         │
+         │  draining, no solar
+         ▼
+Battery 60%  ─────────────────── Standard
+         │
+         │  still draining
+         ▼
+Battery 25%  ─────────────────── Minimal
+         │
+         │  critical
+         ▼
+Battery 10%  ─────────────────── Hibernate
+         │
+         │  solar returns, charging
+         ▼
+Battery 35%  ─────────────────── Standard (hysteresis: don't ramp up at 25%)
+         │
+         │  fully charged
+         ▼
+Battery 80%+ ─────────────────── Full
+```
+
+### Grid-Managed Load Balancing
+
+The Foreman on the grid node sees every camera's power state. It makes mesh-level decisions:
+
+```
+Foreman sees:
+    Camera 1: wall power, Full tier, covers front yard
+    Camera 2: solar+battery, 45%, Standard tier, covers side yard
+    Camera 3: battery only, 18%, Minimal tier, covers back door
+    Camera 4: wall power, Maximum tier, covers driveway
+
+Foreman decides:
+    Camera 3 is dying. Back door is critical zone.
+    → Tell Camera 4 (wall power, has overlapping FOV) to widen coverage
+    → Tell Camera 3: drop to Hibernate, PIR wake only
+    → Alert user: "Camera 3 battery low — back door coverage reduced.
+       Camera 4 is compensating. Recharge or reposition solar panel."
+```
+
+**The grid never lets a critical zone go dark without telling you.** If a camera can't maintain its zone, the mesh compensates AND notifies. You decide whether to recharge, add a camera, or accept reduced coverage.
+
+### Solar-Aware Scheduling
+
+For solar-powered cameras, the agent tracks charge patterns over days:
+
+```rust
+struct SolarProfile {
+    /// Hourly average charge rate over the last 7 days.
+    /// Index 0 = midnight, 23 = 11pm.
+    hourly_charge_w: [f32; 24],
+    /// Today's cumulative charge vs drain.
+    today_net_wh: f32,
+    /// Predicted hours of sunlight remaining today.
+    sun_hours_remaining: f32,
+}
+```
+
+This lets the Foreman predict: "Camera 2 drains 0.5Wh overnight, charges 3Wh during the day. It will survive the night at Standard tier. But if I push it to Full tier tonight for a security concern, it'll die at 4am. Keep it at Standard."
+
+**Time-of-day awareness:** Most security events happen at night. Solar cameras have the least power at night. The Foreman balances this: run Minimal tier during quiet daytime hours to bank energy, then spend it on Standard/Full tier at night when it matters.
+
+### Thermal Management
+
+The SoC in a sealed plastic housing can overheat in direct sun. The agent monitors CPU temperature and throttles if needed:
+
+| Temperature | Action |
+|---|---|
+| < 60C | Normal operation |
+| 60-70C | Drop one triage tier |
+| 70-80C | Drop to Minimal |
+| > 80C | Hibernate + alert grid ("camera overheating") |
+
+Thermal throttling is reported in the heartbeat. The grid node can see if a camera is consistently overheating (bad mounting location, direct sun on housing) and alert the user.
+
+### User Notifications (via Continuum)
+
+The grid surfaces power events to the user through the normal continuum event system:
+
+| Event | When | Message |
+|---|---|---|
+| `camera/battery_low` | Battery drops below 20% | "Camera 3 (back door) battery at 18%. Coverage reduced." |
+| `camera/battery_critical` | Battery drops below 10% | "Camera 3 entering hibernate. Back door unwatched." |
+| `camera/solar_blocked` | Solar charge rate drops to zero during expected sun hours | "Camera 2 solar panel may be blocked — no charge since 10am." |
+| `camera/thermal_throttle` | CPU temp exceeds 70C | "Camera 5 overheating — consider shade or relocating." |
+| `camera/coverage_gap` | A zone has no active cameras | "Back yard has no camera coverage. Camera 3 is hibernating, Camera 7 is offline." |
+| `camera/fully_charged` | Battery reaches 95%+ | (Silent — logged but no notification. Good news doesn't need alerts.) |
+
+---
+
 ## Memory Budget (32MB camera)
 
 | Component | RAM | Notes |
