@@ -117,13 +117,14 @@ fn run_dataset(dataset: &str, subset: Option<&str>, output: Option<PathBuf>, dat
     let data_root = data_dir.unwrap_or_else(|| PathBuf::from("data/datasets"));
 
     let results = match dataset {
+        "synthetic" => runner::run_synthetic(subset),
         "cdnet" => runner::run_cdnet(&data_root, subset),
         "middlebury" => runner::run_middlebury(&data_root),
         "ucf-crime" => runner::run_ucf_crime(&data_root, subset),
         "caviar" => runner::run_caviar(&data_root),
         "epfl" => runner::run_epfl(&data_root, subset),
         _ => {
-            eprintln!("Unknown dataset: {}. Options: cdnet, middlebury, ucf-crime, caviar, epfl", dataset);
+            eprintln!("Unknown dataset: {}. Options: synthetic, cdnet, middlebury, ucf-crime, caviar, epfl", dataset);
             return;
         }
     };
