@@ -15,6 +15,7 @@ use opencv::core::{Mat, Size, Vector, CV_8UC1, BORDER_DEFAULT, AlgorithmHint};
 use opencv::imgproc;
 use opencv::features2d;
 use opencv::video;
+use opencv::videoio;
 
 // ── Mat <-> image crate conversions ────────────────────────────────
 
@@ -277,4 +278,91 @@ pub fn downsample(grey: &image::GrayImage, factor: u32) -> image::GrayImage {
     }
 
     mat_to_gray(&resized)
+}
+
+// ── Video file reader ──────────────────────────────────────────
+
+/// Read frames from a video file (MP4, AVI, RTSP URL, etc.)
+/// Uses OpenCV's VideoCapture — handles all formats ffmpeg/GStreamer support.
+///
+/// Returns an iterator of (frame_index, RgbImage).
+/// The caller pushes frames into the pipeline at their own pace.
+pub struct VideoReader {
+    cap: videoio::VideoCapture,
+    frame_index: u64,
+    width: u32,
+    height: u32,
+    fps: f64,
+    total_frames: u64,
+}
+
+impl VideoReader {
+    /// Open a video file or RTSP URL.
+    pub fn open(path: &str) -> Result<Self, String> {
+        let cap = videoio::VideoCapture::from_file(path, videoio::CAP_ANY)
+            .map_err(|e| format!("Failed to open video: {}", e))?;
+
+        if !cap.is_opened().unwrap_or(false) {
+            return Err(format!("Could not open: {}", path));
+        }
+
+        let width = cap.get(videoio::CAP_PROP_FRAME_WIDTH).unwrap_or(0.0) as u32;
+        let height = cap.get(videoio::CAP_PROP_FRAME_HEIGHT).unwrap_or(0.0) as u32;
+        let fps = cap.get(videoio::CAP_PROP_FPS).unwrap_or(30.0);
+        let total_frames = cap.get(videoio::CAP_PROP_FRAME_COUNT).unwrap_or(0.0) as u64;
+
+        Ok(Self { cap, frame_index: 0, width, height, fps, total_frames })
+    }
+
+    pub fn width(&self) -> u32 { self.width }
+    pub fn height(&self) -> u32 { self.height }
+    pub fn fps(&self) -> f64 { self.fps }
+    pub fn total_frames(&self) -> u64 { self.total_frames }
+    pub fn frame_index(&self) -> u64 { self.frame_index }
+
+    /// Read the next frame as an RgbImage. Returns None at end of video.
+    pub fn next_frame(&mut self) -> Option<image::RgbImage> {
+        let mut mat = Mat::default();
+        if !self.cap.read(&mut mat).unwrap_or(false) {
+            return None;
+        }
+        if mat.empty() {
+            return None;
+        }
+
+        let w = mat.cols() as u32;
+        let h = mat.rows() as u32;
+
+        // OpenCV reads as BGR by default — convert to RGB
+        let mut rgb_mat = Mat::default();
+        if imgproc::cvt_color_def(&mat, &mut rgb_mat, imgproc::COLOR_BGR2RGB).is_err() {
+            return None;
+        }
+
+        let data = rgb_mat.data_bytes().ok()?.to_vec();
+        let img = image::RgbImage::from_raw(w, h, data)?;
+
+        self.frame_index += 1;
+        Some(img)
+    }
+
+    /// Timestamp of the current frame in seconds.
+    pub fn timestamp(&self) -> f64 {
+        if self.fps > 0.0 {
+            self.frame_index as f64 / self.fps
+        } else {
+            self.frame_index as f64 / 30.0
+        }
+    }
+}
+
+/// Convenience: read all frames from a video file.
+/// For small test videos only — large videos should use the iterator.
+pub fn read_all_frames(path: &str) -> Result<Vec<image::RgbImage>, String> {
+    let mut reader = VideoReader::open(path)?;
+    let mut frames = Vec::new();
+    while let Some(frame) = reader.next_frame() {
+        frames.push(frame);
+    }
+    Ok(frames)
 }
