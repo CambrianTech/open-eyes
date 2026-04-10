@@ -226,46 +226,14 @@ impl Frame {
 // The Frame's lazy getters call these; replacing a CPU function with a
 // wgpu compute shader is transparent to processing nodes.
 
-/// Extract ORB-style feature points from a greyscale image.
+/// Extract ORB feature points from a greyscale image via OpenCV.
 fn extract_features(grey: &image::GrayImage) -> Vec<FeaturePoint> {
-    // TODO: real ORB/FAST feature extraction
-    // Placeholder: grid of evenly-spaced points with empty descriptors
-    let step = 32;
-    let mut features = Vec::new();
-    let (w, h) = grey.dimensions();
-    for y in (step..h).step_by(step as usize) {
-        for x in (step..w).step_by(step as usize) {
-            features.push(FeaturePoint {
-                pixel: (x as f64, y as f64),
-                descriptor: vec![0u8; 32], // 256-bit ORB descriptor placeholder
-                track_id: None,
-            });
-        }
-    }
-    features
+    crate::cv::extract_orb_features(grey, 500)
 }
 
-/// Compute edges from a greyscale image (Canny-style).
+/// Canny edge detection via OpenCV.
 fn compute_edges(grey: &image::GrayImage) -> EdgeMap {
-    // TODO: real Canny edge detection (or Sobel + threshold)
-    // Placeholder: simple gradient magnitude threshold
-    let (w, h) = grey.dimensions();
-    let mut data = vec![0u8; (w * h) as usize];
-
-    for y in 1..(h - 1) {
-        for x in 1..(w - 1) {
-            let gx = grey.get_pixel(x + 1, y)[0] as i16
-                   - grey.get_pixel(x - 1, y)[0] as i16;
-            let gy = grey.get_pixel(x, y + 1)[0] as i16
-                   - grey.get_pixel(x, y - 1)[0] as i16;
-            let mag = (((gx as i32) * (gx as i32) + (gy as i32) * (gy as i32)) as f32).sqrt().min(255.0) as u8;
-            if mag > 30 {
-                data[(y * w + x) as usize] = 255;
-            }
-        }
-    }
-
-    EdgeMap { width: w, height: h, data }
+    crate::cv::compute_canny_edges(grey, 50.0, 150.0)
 }
 
 // ── ProcessNode trait (the subscriber interface) ───────────────────────
@@ -396,7 +364,18 @@ mod tests {
     }
 
     fn test_image() -> image::RgbImage {
-        image::RgbImage::new(640, 480)
+        // Checkerboard pattern — ORB needs texture/corners to detect features
+        let w = 640u32;
+        let h = 480u32;
+        let mut img = image::RgbImage::new(w, h);
+        for y in 0..h {
+            for x in 0..w {
+                let checker = ((x / 32) + (y / 32)) % 2;
+                let val = if checker == 0 { 200u8 } else { 50u8 };
+                img.put_pixel(x, y, image::Rgb([val, val, val]));
+            }
+        }
+        img
     }
 
     #[test]

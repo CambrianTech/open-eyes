@@ -21,6 +21,7 @@ pub mod features;
 pub mod fusion;
 pub mod frame;
 pub mod gpu;
+pub mod cv;
 pub mod rtos;
 pub mod stitch;
 
