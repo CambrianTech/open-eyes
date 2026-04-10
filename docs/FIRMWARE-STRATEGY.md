@@ -180,6 +180,27 @@ The camera boots from SD, overwrites its stock firmware with:
 
 **Per-SoC images.** We maintain firmware images per SoC family (Hi3516, T31, SSD202, etc.). The download page shows: "What chip is in your camera?" with photos of common markings. Pick yours, download, flash. Eventually the app could identify the SoC from a photo of the board.
 
+**WiFi credential embedding.** The app knows your WiFi network (it's connected to it). When writing the firmware to SD card, it embeds `wpa_supplicant.conf` with your SSID and passphrase directly into the image. Camera boots → already on your network → app discovers it instantly. No "point camera at WiFi QR code" step. No typing your WiFi password into a camera's janky web UI.
+
+```
+SD card contents after app writes it:
+├── firmware.bin          # OpenIPC + open-eyes agent
+├── wpa_supplicant.conf   # Your WiFi credentials (written by app)
+├── openeyes.conf         # Node ID, grid endpoint, triage config
+└── recovery.flag         # Tells bootloader: flash from SD on next boot
+```
+
+The app writes all three config files alongside the firmware. The camera boots with everything it needs — WiFi, grid connection, triage settings. Zero manual configuration.
+
+**Phone-based flashing (Tier 1.5).** USB-C/Lightning SD card readers ($10 on Amazon). The app:
+1. Identifies your camera model (from stock web interface or RTSP metadata)
+2. Downloads the matching firmware image (~5MB)
+3. Embeds your WiFi credentials + grid config
+4. Writes to SD card (30 seconds)
+5. Shows: "Insert SD card into camera, press reset with a pin"
+
+Same UX as Square's credit card reader — plug in a dongle, app does the work.
+
 **Recovery.** If anything goes wrong, the SD card IS the recovery. Pull it out, camera boots its original flash firmware. Put a fresh image on the card, try again. The SD card is both the install media and the escape hatch.
 
 **OTA updates after first boot.** The Foreman pushes firmware updates to cameras over the encrypted mesh. No cloud download. No checking for updates on someone's server. Your grid, your updates.
