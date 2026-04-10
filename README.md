@@ -177,6 +177,14 @@ One walk-through, multiple uses. The security setup is just the first thing it's
 
 ### Adding a Camera
 
+**Tier 1: Stock firmware (zero effort)**
+
+Open the app. It scans your network and finds cameras that expose RTSP. Tap to add. Done. Works with most cheap cameras out of the box — no flashing, no firmware, no SD card. Your phone or grid node does all the processing.
+
+Limitations: the camera still phones home to the manufacturer's cloud, no on-device triage (all frames cross WiFi), and the manufacturer could push a firmware update that breaks RTSP access.
+
+**Tier 2: open-eyes firmware (full control)**
+
 ```
 1. Write the open-eyes firmware to a micro SD card
 2. Pop it into the camera
@@ -184,9 +192,11 @@ One walk-through, multiple uses. The security setup is just the first thing it's
 4. Walk away
 ```
 
-That's it. The camera boots from SD, flashes itself with OpenIPC + the open-eyes Rust agent, announces itself on your local network via mDNS, and your grid node picks it up. No app. No cloud account. No pairing dance. No QR code scan. Physical access is the trust root — you're standing next to the camera, you own it.
+The camera boots from SD, flashes itself with OpenIPC + the open-eyes Rust agent, announces itself on your network via mDNS. No phoning home. On-device triage means only interesting frames cross WiFi. The agent reports battery level, temperature, and health to the grid. Locked-down iptables — nothing talks to the internet.
 
-Point your phone at the camera to locate it in 3D space (the setup app's AR finds it via feature matching). Coverage map updates instantly. If anything goes wrong, pull the SD card — camera boots its original firmware. The SD card is both the install media and the escape hatch.
+**Most users start with Tier 1.** When you care about privacy, bandwidth, or on-device intelligence, upgrade to Tier 2 camera by camera. The app works with both — it doesn't care how the frames arrive. Pull the SD card anytime and the camera reverts to stock.
+
+Point your phone at any camera (Tier 1 or 2) to locate it in 3D space. The setup app's AR finds it via feature matching. Coverage map updates instantly.
 
 ## Architecture
 
