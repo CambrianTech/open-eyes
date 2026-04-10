@@ -10,3 +10,4 @@
 pub mod motion;
 pub mod background;
 pub mod edge_density;
+pub mod scene_hash;
