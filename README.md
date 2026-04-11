@@ -177,26 +177,19 @@ One walk-through, multiple uses. The security setup is just the first thing it's
 
 ### Adding a Camera
 
-**Tier 1: Stock firmware (zero effort)**
-
-Open the app. It scans your network and finds cameras that expose RTSP. Tap to add. Done. Works with most cheap cameras out of the box — no flashing, no firmware, no SD card. Your phone or grid node does all the processing.
-
-Limitations: the camera still phones home to the manufacturer's cloud, no on-device triage (all frames cross WiFi), and the manufacturer could push a firmware update that breaks RTSP access.
-
-**Tier 2: open-eyes firmware (full control)**
-
 ```
-1. Write the open-eyes firmware to a micro SD card
-2. Pop it into the camera
-3. Needle-reset (pin in the reset hole)
-4. Walk away
+1. Buy a compatible camera ($15-25)
+2. App writes open-eyes firmware to a micro SD card
+3. Pop it into the camera
+4. Needle-reset (pin in the reset hole)
+5. Walk away
 ```
 
-The camera boots from SD, flashes itself with OpenIPC + the open-eyes Rust agent, announces itself on your network via mDNS. No phoning home. On-device triage means only interesting frames cross WiFi. The agent reports battery level, temperature, and health to the grid. Locked-down iptables — nothing talks to the internet.
+The camera boots from SD, flashes itself with open-eyes firmware. No phoning home. No cloud account. No manufacturer spyware. The camera joins your Reticulum mesh with a FIDO2 cryptographic identity — no passwords, no internet required. Physical presence at the camera is the trust ceremony.
 
-**Most users start with Tier 1.** When you care about privacy, bandwidth, or on-device intelligence, upgrade to Tier 2 camera by camera. The app works with both — it doesn't care how the frames arrive. Pull the SD card anytime and the camera reverts to stock.
+**We do not support stock firmware.** Stock firmware on cheap cameras phones home to manufacturer clouds, streams your video to servers you don't control, and can't be audited. If you can't flash it, don't use it. The [compatibility list](docs/COMPATIBLE-CAMERAS.md) shows cameras with flashable SoCs.
 
-Point your phone at any camera (Tier 1 or 2) to locate it in 3D space. The setup app's AR finds it via feature matching. Coverage map updates instantly.
+Point your phone at the camera to locate it in 3D space. The setup app's AR finds it via feature matching. Coverage map updates instantly. Pull the SD card anytime and the camera reverts to stock — the SD card is both the install media and the escape hatch.
 
 ## Architecture
 
