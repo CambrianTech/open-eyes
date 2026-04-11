@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "updated": "2026-04-10",
+  "source": "https://github.com/CambrianTech/open-eyes/blob/main/compatibility.json",
+  "socs": {
+    "T20": {
+      "vendor": "Ingenic",
+      "arch": "MIPS",
+      "openipc": "supported",
+      "thingino": "supported",
+      "flash": "sdcard",
+      "npu": false,
+      "notes": "Wyze Cam v2, older but proven"
+    },
+    "T21": {
+      "vendor": "Ingenic",
+      "arch": "MIPS",
+      "openipc": "supported",
+      "thingino": "supported",
+      "flash": "sdcard",
+      "npu": false,
+      "notes": null
+    },
+    "T31": {
+      "vendor": "Ingenic",
+      "arch": "MIPS",
+      "openipc": "supported",
+      "thingino": "supported",
+      "flash": "sdcard",
+      "npu": true,
+      "notes": "The gold standard. Wyze v3, Pan v2, Floodlight."
+    },
+    "T40": {
+      "vendor": "Ingenic",
+      "arch": "MIPS",
+      "openipc": "experimental",
+      "thingino": "planned",
+      "flash": "sdcard",
+      "npu": true,
+      "notes": "Wyze v4 uses this BUT has secure boot. Chip swap required on Wyze v4."
+    },
+    "Hi3516EV200": {
+      "vendor": "HiSilicon",
+      "arch": "ARM Cortex-A7",
+      "openipc": "supported",
+      "thingino": "unsupported",
+      "flash": "sdcard",
+      "npu": false,
+      "notes": "Common in budget IP cams. Check stock firmware is Linux (not LiteOS)."
+    },
+    "Hi3518EV200": {
+      "vendor": "HiSilicon",
+      "arch": "ARM926EJ-S",
+      "openipc": "supported",
+      "thingino": "unsupported",
+      "flash": "sdcard",
+      "npu": false,
+      "notes": "Older HiSilicon, widely supported"
+    },
+    "Hi3518EV300": {
+      "vendor": "HiSilicon",
+      "arch": "ARM Cortex-A7",
+      "openipc": "supported",
+      "thingino": "unsupported",
+      "flash": "uart",
+      "npu": false,
+      "notes": "AVOID in CloudEdge cameras — they run LiteOS, need UART to flash."
+    },
+    "SSC338Q": {
+      "vendor": "Sigmastar",
+      "arch": "ARM Cortex-A7",
+      "openipc": "supported",
+      "thingino": "unsupported",
+      "flash": "sdcard",
+      "npu": true,
+      "notes": "Good NPU for on-device detection"
+    },
+    "SSD202": {
+      "vendor": "Sigmastar",
+      "arch": "ARM Cortex-A7",
+      "openipc": "supported",
+      "thingino": "unsupported",
+      "flash": "sdcard",
+      "npu": false,
+      "notes": "Ultra-cheap SoC"
+    },
+    "AK3918EV300": {
+      "vendor": "Anyka",
+      "arch": "ARM",
+      "openipc": "unsupported",
+      "thingino": "unsupported",
+      "flash": "none",
+      "npu": false,
+      "notes": "No support. No flash path. Avoid."
+    }
+  },
+  "apps": {
+    "CloudEdge": {
+      "verdict": "incompatible",
+      "platform": "Meari/ppstrong",
+      "reason": "LiteOS, P2P only, no RTSP, sealed hardware, phones home to China"
+    },
+    "Meari": {
+      "verdict": "incompatible",
+      "platform": "Meari/ppstrong",
+      "reason": "Same as CloudEdge"
+    },
+    "Wyze": {
+      "verdict": "check_model",
+      "platform": "Wyze",
+      "reason": "v2/v3 compatible (Thingino). v4 incompatible (secure boot)."
+    },
+    "Tapo": {
+      "verdict": "check_soc",
+      "platform": "TP-Link",
+      "reason": "Some models flashable. Check FCC internal photos for SoC."
+    },
+    "iCSee": {
+      "verdict": "check_soc",
+      "platform": "XMEye/Xiongmai",
+      "reason": "Often HiSilicon, often flashable. Check specific SoC."
+    },
+    "XMEye": {
+      "verdict": "check_soc",
+      "platform": "Xiongmai",
+      "reason": "Same as iCSee"
+    },
+    "Tuya": {
+      "verdict": "check_soc",
+      "platform": "Tuya",
+      "reason": "Varies wildly by model. Check SoC."
+    },
+    "Smart Life": {
+      "verdict": "check_soc",
+      "platform": "Tuya",
+      "reason": "Same as Tuya"
+    },
+    "CamHi": {
+      "verdict": "check_soc",
+      "platform": "CamHi",
+      "reason": "Usually HiSilicon. Often has RTSP. Check SoC for flashability."
+    },
+    "V380": {
+      "verdict": "check_soc",
+      "platform": "V380",
+      "reason": "Common in cheap Chinese cameras. Check SoC."
+    }
+  },
+  "cameras": {
+    "compatible": [
+      {
+        "brand": "Wyze",
+        "model": "Cam v3",
+        "soc": "T31",
+        "flash": "sdcard",
+        "firmware": "thingino",
+        "price_usd": 20,
+        "tested_by": "community",
+        "notes": "The gold standard. Huge community support."
+      },
+      {
+        "brand": "Wyze",
+        "model": "Cam v2",
+        "soc": "T20",
+        "flash": "sdcard",
+        "firmware": "thingino",
+        "price_usd": 15,
+        "tested_by": "community",
+        "notes": "Older but works perfectly"
+      },
+      {
+        "brand": "Wyze",
+        "model": "Cam Pan v2",
+        "soc": "T31",
+        "flash": "sdcard",
+        "firmware": "thingino",
+        "price_usd": 25,
+        "tested_by": "community",
+        "notes": "Pan/tilt, same SoC as v3"
+      },
+      {
+        "brand": "Wyze",
+        "model": "Cam Floodlight",
+        "soc": "T31",
+        "flash": "sdcard",
+        "firmware": "thingino",
+        "price_usd": 30,
+        "tested_by": "community",
+        "notes": "Outdoor with built-in lights"
+      }
+    ],
+    "incompatible": [
+      {
+        "brand": "ieGeek",
+        "model": "ZS-GX5",
+        "soc": "Hi3518EV300",
+        "app": "CloudEdge",
+        "reason": "LiteOS, ultrasonically welded, no RTSP, UART-only flash",
+        "fcc_id": "2AZL7-ZS-GX1S",
+        "tested_by": "joelteply",
+        "tested_date": "2026-04-10"
+      },
+      {
+        "brand": "ieGeek",
+        "model": "ZS-GQ1",
+        "soc": "Hi3518EV300",
+        "app": "CloudEdge",
+        "reason": "Same as ZS-GX5",
+        "tested_by": "joelteply",
+        "tested_date": "2026-04-10"
+      },
+      {
+        "brand": "Adorbee",
+        "model": "A3",
+        "soc": "AK3918EV300",
+        "app": "CloudEdge",
+        "reason": "Anyka SoC unsupported, CloudEdge locked",
+        "fcc_id": "2A2DZ-IPCAMERA",
+        "tested_by": "joelteply",
+        "tested_date": "2026-04-10"
+      },
+      {
+        "brand": "Wyze",
+        "model": "Cam v4",
+        "soc": "T40",
+        "app": "Wyze",
+        "reason": "Secure boot enabled. Requires SoC chip swap (QFN96 rework).",
+        "tested_by": "thingino-community",
+        "tested_date": "2026"
+      }
+    ]
+  }
+}
