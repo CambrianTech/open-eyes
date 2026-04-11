@@ -16,6 +16,7 @@ mod datasets;
 mod metrics;
 mod runner;
 pub mod synthetic;
+pub mod compat;
 
 use std::path::PathBuf;
 
@@ -30,6 +31,24 @@ fn main() {
     }
 
     match args[1].as_str() {
+        "--check-camera" => {
+            let app = args.iter().position(|a| a == "--app")
+                .and_then(|i| args.get(i + 1));
+            let soc = args.iter().position(|a| a == "--soc")
+                .and_then(|i| args.get(i + 1));
+
+            let result = if let Some(app_name) = app {
+                compat::check_by_app(app_name)
+            } else if let Some(soc_name) = soc {
+                compat::check_by_soc(soc_name)
+            } else {
+                eprintln!("Usage: oe-eval --check-camera --app <AppName>");
+                eprintln!("       oe-eval --check-camera --soc <SoCName>");
+                return;
+            };
+
+            compat::print_report(&result);
+        }
         "--video" => {
             // Direct video file evaluation — quickest path to real data
             let video_path = args.get(2).expect("Usage: oe-eval --video <path.mp4>");
